@@ -25,6 +25,7 @@ class AdminController < ApplicationController
   end
 
   def time_table
+    @subjects = Course.find_by_sql("SELECT course_id, name FROM course").collect{|c| [c.course_id, c.name]}.to_json
     render :layout => false
   end
 
