@@ -1,8 +1,110 @@
 class ExaminationController < ApplicationController
   def index
+    @class_rooms = [["---Select Class---", ""]]
+    @class_rooms += ClassRoom.all.collect{|c|[c.name, c.id]}
+    
+    @exam_types = [["All", "All"]]
+    @exam_types += ExaminationType.all.collect{|e|[e.name, e.id]}
+
+    @courses = [["---Select Course---", ""]]
+    @courses += Course.all.collect{|c|[c.name, c.id]}
+
+    first_exam = Examination.first
+    @first_exam_class_room = first_exam.class_room_id rescue nil
+    @first_exam_type = first_exam.exam_type_id rescue nil
+    @first_exam_year = first_exam.start_date.to_date.year rescue nil
+    @first_exam_course = first_exam.course_id rescue nil
+
+    @exams_per_month = []
+    @exam_without_results = []
+    @exam_with_results = []
+
+    (1..12).to_a.each do |month_number|
+      course_exams = Examination.find(:all, :conditions => ["class_room_id =? AND exam_type_id =?
+          AND course_id =? AND DATE_FORMAT(start_date, '%m') =? AND DATE_FORMAT(start_date, '%Y') =?",
+          (first_exam.class_room_id rescue nil), (first_exam.exam_type_id rescue nil),
+          (first_exam.course_id rescue nil),
+          (month_number rescue nil), (first_exam.start_date.to_date.year rescue nil)])
+      without_results = 0
+      with_results = 0
+      (course_exams || []).each do |course_exam|
+          if (course_exam.examination_results.blank?)
+            without_results += 1
+          end
+
+          unless (course_exam.examination_results.blank?)
+            with_results += 1
+          end        
+      end
+
+      total_exams_per_month = course_exams.count
+      @exams_per_month << total_exams_per_month
+      @exam_without_results << without_results
+      @exam_with_results << with_results
+    end
+    
+    start_year = (Date.today.year - 5)
+    end_year = Date.today.year
+    @years = (start_year..end_year).to_a.reverse
+    class_rooms = ClassRoom.all
+    hash = {}
+    class_rooms.each do |class_room|
+      class_room_id = class_room.id
+      hash[class_room_id] = {}
+      class_room.class_room_courses.each do |crc|
+        course_id = crc.course_id
+        course_name = crc.course.name
+        hash[class_room_id][course_id] = course_name
+      end
+    end
+    
+    @class_courses = hash.to_json
     render :layout => false
   end
 
+  def plot_graph
+    class_room_id = params[:class_room_id]
+    exam_type_ids = params[:exam_type_id]
+    if (params[:exam_type_id].upcase == 'ALL')
+      exam_type_ids = ExaminationType.all.map(&:id).join(', ')
+    end
+    year = params[:year]
+    course_id = params[:course_id]
+
+    @exams_per_month = []
+    @exams_without_results = []
+    @exams_with_results = []
+    
+    (1..12).to_a.each do |month_number|
+      course_exams = Examination.find(:all, :conditions => ["class_room_id =? AND exam_type_id IN (#{exam_type_ids})
+          AND course_id =? AND DATE_FORMAT(start_date, '%m') =? AND DATE_FORMAT(start_date, '%Y') =?",
+          class_room_id, course_id,
+          month_number, year])
+      
+      without_results = 0
+      with_results = 0
+      (course_exams || []).each do |course_exam|
+          if (course_exam.examination_results.blank?)
+            without_results += 1
+          end
+
+          unless (course_exam.examination_results.blank?)
+            with_results += 1
+          end
+      end
+
+      total_exams_per_month = course_exams.count
+      @exams_per_month << total_exams_per_month
+      @exams_without_results << without_results
+      @exams_with_results << with_results
+    end
+    hash = {}
+    hash["exams_per_month"] = @exams_per_month
+    hash["exams_without_results"] = @exams_without_results
+    hash["exams_with_results"] = @exams_with_results
+    render :text => hash.to_json and return
+  end
+  
   def new_exam_type
     if (request.method == :post)
         if (ExaminationType.create({

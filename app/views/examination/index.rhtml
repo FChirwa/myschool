@@ -8,11 +8,269 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
     <!-- jQuery & JS files -->
-    <%= javascript_include_tag("jquery") %>
+    <%= javascript_include_tag("jquery-1.9.1.min") %>
+    <%= javascript_include_tag("highcharts") %>
     <%= javascript_include_tag("script") %>
+
+    <%= javascript_include_tag("exporting") %>
     <%= stylesheet_link_tag("style") %>
+
+    <script>
+      var classCourses = eval(<%= @class_courses %>)
+      $(function () {
+        $('#container').highcharts({
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Exam Statistics'
+            },
+            subtitle: {
+                text: 'Based on the above parameters'
+            },
+            xAxis: {
+                categories: [
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'May',
+                    'Jun',
+                    'Jul',
+                    'Aug',
+                    'Sep',
+                    'Oct',
+                    'Nov',
+                    'Dec'
+                ]
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Total'
+                }
+            },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px; font-weight:bold;">{point.key}</span><table>',
+                pointFormat: '<tr><td style="color:{series.color};text-align:left; padding:3px;">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y}</b></td></tr>',
+                footerFormat: '</table>',
+                shared: true,
+                useHTML: true
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0.2,
+                    borderWidth: 0
+                }
+            },
+            series: [
+              {
+                name: 'Exams With Results',
+                data: eval('<%= @exam_with_results.to_json %>')
+
+              },
+              {
+                name: 'Exams Without Results',
+                data: eval('<%= @exam_without_results.to_json %>')
+
+              },
+              {
+                name: 'Total Exams',
+                data: eval('<%= @exams_per_month.to_json %>')
+
+              }
+            ]
+        });
+    });
+
+    function loadClassCourses(obj){
+      classId = obj.value;
+      courses = classCourses[classId];
+      options = "";
+      for (var courseId in courses){
+        courseName = courses[courseId]
+        options += "<option value=" + courseId + ">" + courseName + "</option>";
+      }
+      document.getElementById("course").innerHTML = options;
+    }
+
+    function populateDropDowns(){
+      classRoom = document.getElementById("class_room");
+      examType = document.getElementById("exam_type");
+      course = document.getElementById("course");
+      year = document.getElementById("year");
+
+      classRoomOptions = classRoom.getElementsByTagName('option');
+      examTypeOptions = examType.getElementsByTagName('option');
+      courseOptions = course.getElementsByTagName('option');
+      yearOptions = year.getElementsByTagName('option');
+ 
+      firstExamClassRoomId = parseInt(<%= @first_exam_class_room %>);
+      firstExamTypeId = parseInt(<%= @first_exam_type %>);
+      firstExamCourseId = parseInt(<%= @first_exam_course %>);
+      firstExamYear = parseInt(<%= @first_exam_year %>);
+
+      for (i=0; i<= classRoomOptions.length - 1; i++){
+        classRoomId = parseInt(classRoomOptions[i].getAttribute('value'));
+        if (classRoomId == firstExamClassRoomId){
+          classRoomOptions[i].setAttribute("selected", 'selected');
+          loadClassCourses(classRoomOptions[i])
+        }
+      }
+
+      for (x=0; x<= examTypeOptions.length - 1; x++){
+        examTypeId = parseInt(examTypeOptions[x].getAttribute('value'));
+        if (examTypeId == firstExamTypeId){
+          examTypeOptions[x].setAttribute("selected", 'selected')
+        }
+      }
+
+      for (y=0; y<= courseOptions.length - 1; y++){
+        courseId = parseInt(courseOptions[y].getAttribute('value'));
+        if (courseId == firstExamCourseId){
+          courseOptions[y].setAttribute("selected", 'selected')
+        }
+      }
+
+      for (z=0; z<= yearOptions.length - 1; z++){
+        yearId = parseInt(yearOptions[z].getAttribute('value'));
+        if (yearId == firstExamYear){
+          yearOptions[z].setAttribute("selected", 'selected')
+        }
+      }
+    }
+
+    function plotGraph(){
+        classRoomId = document.getElementById('class_room').value;
+        examTypeId = document.getElementById('exam_type').value;
+        courseId = document.getElementById('course').value;
+        year = document.getElementById('year').value;
+
+        jQuery.ajax({
+          type: "POST",
+          url: "/examination/plot_graph",
+          data: "class_room_id=" + classRoomId + "&exam_type_id=" + examTypeId + "&course_id=" + courseId + "&year=" + year,
+          success: function(results){
+            results = eval('(' + results + ')')
+            examsPerMonth = results['exams_per_month'];
+            examsWithResults = results['exams_with_results'];
+            examsWithoutResults = results['exams_without_results'];
+            $('#container').highcharts({
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: 'Exam Statistics'
+                },
+                subtitle: {
+                    text: 'Based on the above parameters'
+                },
+                xAxis: {
+                    categories: ['Jan', 'Feb', 'Mar', 'Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Total'
+                    }
+                },
+                tooltip: {
+                    headerFormat: '<span style="font-size:10px; font-weight:bold;">{point.key}</span><table>',
+                    pointFormat: '<tr><td style="color:{series.color};text-align:left; padding:3px;">{series.name}: </td>' +
+                        '<td style="padding:0"><b>{point.y}</b></td></tr>',
+                    footerFormat: '</table>',
+                    shared: true,
+                    useHTML: true
+                },
+                plotOptions: {
+                    column: {
+                        pointPadding: 0.2,
+                        borderWidth: 0
+                    }
+                },
+                series: [
+                  {
+                    name: 'Exams With Results',
+                    data: examsWithResults
+
+                  },
+                  {
+                    name: 'Exams Without Results',
+                    data: examsWithoutResults
+
+                  },
+                  {
+                    name: 'Total Exams',
+                    data: examsPerMonth
+
+                  }
+                ]
+            });
+
+          }
+
+      });
+    }
+    </script>
+    <style>
+      #filter-graph-form fieldset {
+        border: 1px solid gray;
+        padding: 0px;
+        width: 98.7%;
+      }
+      #filter-graph-form legend {
+        color: #abda0f;
+        font-size: 14px;
+        font-weight: 100;
+        margin-left: 14px;
+        padding: 2px;
+      }
+      #filter-graph-form fieldset input {
+        color: #505050;
+        float: left;
+        margin-right: 5px;
+        width: 140px;
+        padding: 3px;
+        font-size: 14px;
+      }
+      
+     #class_room, #exam_type, #course{
+        background-color: #fff;
+        background-image: none;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+        color: #555;
+        display: block;
+        font-size: 14px;
+        height: 34px;
+        line-height: 1.42857;
+        padding: 6px 12px;
+        min-width: 167px;
+        transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+      }
+
+      #year{
+        background-color: #fff;
+        background-image: none;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+        color: #555;
+        display: block;
+        font-size: 14px;
+        height: 34px;
+        line-height: 1.42857;
+        padding: 6px 12px;
+        transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+      }
+      a{
+        cursor: pointer;
+      }
+    </style>
   </head>
-  <body>
+  <body onload="populateDropDowns();">
 
     <!-- TOP BAR -->
     <div id="top-bar">
@@ -65,7 +323,7 @@
           <li><a href="/class_room/index">Classes</a></li>
           <li><a href="/course/index">Courses</a></li>
           <li><a href="/report/index">Reports</a></li>
-          <li><a href="/student/my_results">My Results</a></li>
+          <li><a href="/semesters/index">Semester</a></li>
           <li><a href="/admin/time_table">Time Tables</a></li>
         </ul> <!-- end tabs -->
 
@@ -90,7 +348,7 @@
           <ul>
             <li><a href="/examination/new_exam_type">Add Exam Type</a></li>
             <li><a href="/examination/edit_exam_type">Edit Exam Type</a></li>
-            <li><a href="/examination/new_exam_type">Void Exam Type</a></li>
+            <li><a href="/examination/void_exam_type">Void Exam Type</a></li>
             <li><a href="/examination/assign_exam">Assign Exam</a></li>
             <li><a href="/examination/edit_exam_assignment">Edit Exam Assignment</a></li>
             <li><a href="/examination/void_exam">Void Exam</a></li>
@@ -115,125 +373,36 @@
 
 
             <div class="content-module-main">
+              <form id="filter-graph-form" action="#">
+                <fieldset>
+                  <legend>Search</legend>
+                  <div style="margin-left:2%;">
+                    <table>
+                      <tr>
+                        <td style="width:3.5em; text-align: left;"><span>Class</span></td>
+                        <td><%= select_tag("class_room", options_for_select(@class_rooms), {:onchange=>"loadClassCourses(this);"})%></td>
 
-              <table>
+                        <td style="text-align: left;"><span>Exam Type</span></td>
+                        <td><%= select_tag("exam_type", options_for_select(@exam_types))%></td>
 
-                <thead>
+                        <td style="text-align: left;"><span>Course</span></td>
+                        <td><%= select_tag("course", options_for_select(@courses))%></td>
 
-                  <tr>
-                    <th><input type="checkbox" id="table-select-all"></th>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Actions</th>
-                  </tr>
+                        <td style="text-align: left;"><span>Year</span></td>
+                        <td><%= select_tag("year", options_for_select(@years))%></td>
+                        <td><a onclick="plotGraph();" class="button round blue image-right ic-search text-upper">Plot</a></td>
 
-                </thead>
-
-                <tfoot>
-
-                  <tr>
-
-                    <td colspan="5" class="table-footer">
-
-                      <label for="table-select-actions">With selected:</label>
-
-                      <select id="table-select-actions">
-                        <option value="option1">Delete</option>
-                        <option value="option2">Export</option>
-                        <option value="option3">Archive</option>
-                      </select>
-
-                      <a href="#" class="round button blue text-upper small-button">Apply to selected</a>
-
-                    </td>
-
-                  </tr>
-
-                </tfoot>
-
-                <tbody>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                </tbody>
-
-              </table>
-
+                      </tr>
+                    </table>
+                  </div>
+                </fieldset>
+              </form>
+              <div id="container">
+              </div>
             </div> <!-- end content-module-main -->
 
           </div> <!-- end content-module -->
-
           
-
-          
-
-          
-
         </div> <!-- end side-content -->
 
       </div> <!-- end full-width -->

@@ -93,7 +93,7 @@
           <li><a href="/class_room/index">Classes</a></li>
           <li><a href="/course/index">Courses</a></li>
           <li><a href="/report/index">Reports</a></li>
-          <li><a href="/student/my_results">My Results</a></li>
+          <li><a href="/semesters/index">Semester</a></li>
           <li><a href="/admin/time_table">Time Tables</a></li>
         </ul> <!-- end tabs -->
 
@@ -119,6 +119,7 @@
             <li><a href="/teacher/add_teacher/">Add Teacher</a></li>
             <li><a href="/teacher/edit_teacher/">Edit Teacher</a></li>
             <li><a href="/teacher/assign_class/">Assign Class</a></li>
+            <li><a href="/teacher/remove_class/">Remove Class</a></li>
             <li><a href="/teacher/assign_subjects">Assign Subjects</a></li>
             <li><a href="/teacher/teacher_stats">Teacher Stats</a></li>
             <li><a href="/teacher/filter_teachers">Filter Teachers By</a></li>
@@ -225,7 +226,7 @@
         return document.getElementById(id)
       }
       function checkPassword(){
-        var pass = __$("password").value;
+        /*var pass = __$("password").value;
         var confirm = __$("confirm").value;
         if ((confirm != pass) || (pass.length < 1)){
           __$("submit").style.display = "none"
@@ -233,7 +234,7 @@
         else{
           __$("submit").style.display = "inline"
         }
-        setTimeout('checkPassword()', 100);
+        setTimeout('checkPassword()', 100);*/
       }
     </script>
   </body>

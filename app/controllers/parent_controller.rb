@@ -1,5 +1,49 @@
 class ParentController < ApplicationController
   def index
+    @class_rooms = ClassRoom.find(:all).map(&:name)
+    class_rooms = ClassRoom.find(:all)
+    hash = {}
+    @total_guardians = []
+    @students_with_guardians = []
+    @students_without_guardians = []
+    
+    (class_rooms || []).each do |class_room|
+      class_room_id = class_room.id
+      hash[class_room_id] = {}
+      total_guardians = 0
+      
+      class_room.class_room_students.each do |crs|
+        next if crs.student.blank?
+        next if crs.student.student_parent.blank?
+        total_guardians += 1 #Counting available guardians per class
+      end
+
+      hash[class_room_id]["total_guardians"] = total_guardians
+      with_guardians = 0
+      without_guardians = 0
+
+      class_room.class_room_students.each do |crs|
+        next if crs.student.blank?
+        if crs.student.student_parent.blank?
+          without_guardians += 1
+        end
+        unless crs.student.student_parent.blank?
+          with_guardians += 1
+        end
+      end
+      
+      hash[class_room_id]["with_guardians"] = with_guardians
+      hash[class_room_id]["without_guardians"] = without_guardians
+    end
+
+    @statistics = hash.sort_by{|key, value|key.to_i}
+    
+    @statistics.each do |key, value|
+      @total_guardians << value["total_guardians"]
+      @students_with_guardians << value["with_guardians"]
+      @students_without_guardians << value["without_guardians"]
+    end
+    
     render :layout => false
   end
 
@@ -52,6 +96,55 @@ class ParentController < ApplicationController
         parent.delete
     end
     render :text => "true" and return
+  end
+
+  def filter_guardians
+    @class_rooms = [["All", "All"]]
+    @class_rooms += ClassRoom.all.collect{|c|[c.name, c.id]}
+    
+    @parents = Parent.find(:all)
+    if (request.method == :post)
+      class_room_id = params[:class_room]
+      gender = params[:gender]
+      class_room_conditions = ""
+      gender_conditions = ""
+      
+      if (params[:class_room].to_s.upcase == 'ALL')
+        class_room_ids = ClassRoom.all.collect{|c| c.id}.join(', ')
+        class_room_conditions = "crs.class_room_id IN (#{class_room_ids})"
+      else
+        class_room_conditions = "crs.class_room_id = #{class_room_id}"
+      end
+
+      if (params[:gender].to_s.upcase == 'ALL')
+        gender_conditions = "p.gender IN ('Male', 'Female')"
+      else
+        gender_conditions = "p.gender = '#{gender}'"
+      end
+      
+      parents = StudentParent.find_by_sql("SELECT * FROM student_parent sp INNER JOIN parent p
+          ON sp.parent_id=p.parent_id INNER JOIN class_room_student crs
+          ON sp.student_id=crs.student_id WHERE #{class_room_conditions}
+          AND #{gender_conditions}"
+      ).collect{|sp|sp.parent}
+
+      hash = {}
+      
+      (parents || []).each do |parent|
+        parent_id = parent.id.to_s
+        hash[parent_id] = {}
+        hash[parent_id]["fname"] = parent.fname.to_s
+        hash[parent_id]["lname"] = parent.lname.to_s
+        hash[parent_id]["phone"] = parent.phone
+        hash[parent_id]["email"] = parent.email
+        hash[parent_id]["gender"] = parent.gender
+        hash[parent_id]["dob"] = parent.dob.to_date.strftime("%d-%b-%Y")
+        hash[parent_id]["join_date"] = parent.created_at.to_date.strftime("%d-%b-%Y")
+      end
+
+      render :text => hash.to_json and return
+    end
+    render :layout => false
   end
   
   def create

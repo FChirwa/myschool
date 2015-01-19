@@ -8,9 +8,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
     <!-- jQuery & JS files -->
-    <%= javascript_include_tag("jquery") %>
+    <%= javascript_include_tag("jquery-1.9.1.min") %>
+    <%= javascript_include_tag("highcharts") %>
     <%= javascript_include_tag("script") %>
+
+    <%= javascript_include_tag("exporting") %>
     <%= stylesheet_link_tag("style") %>
+
+    <script>
+      $(function () {
+        $('#container').highcharts({
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Guardian Statistics'
+            },
+            subtitle: {
+                text: 'Distribution By Class'
+            },
+            xAxis: {
+                categories: eval('<%= @class_rooms.to_json %>')
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Total'
+                }
+            },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px; font-weight:bold;">{point.key}</span><table>',
+                pointFormat: '<tr><td style="color:{series.color};text-align:left; padding:3px;">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y}</b></td></tr>',
+                footerFormat: '</table>',
+                shared: true,
+                useHTML: true
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0.2,
+                    borderWidth: 0
+                }
+            },
+            series: [
+              {
+                name: 'Students With Guardians',
+                data: eval('<%= @students_with_guardians.to_json %>')
+
+              },
+              {
+                name: 'Students Without Guardians',
+                data: eval('<%= @students_without_guardians.to_json %>')
+
+              }, 
+              {
+                name: 'Total Guardians',
+                data: eval('<%= @total_guardians.to_json %>')
+
+              }
+            ]
+        });
+    });
+
+    </script>
   </head>
   <body>
 
@@ -65,7 +125,7 @@
           <li><a href="/class_room/index">Classes</a></li>
           <li><a href="/course/index">Courses</a></li>
           <li><a href="/report/index">Reports</a></li>
-          <li><a href="/student/my_results">My Results</a></li>
+          <li><a href="/semesters/index">Semester</a></li>
           <li><a href="/admin/time_table">Time Tables</a></li>
         </ul> <!-- end tabs -->
 
@@ -91,6 +151,7 @@
             <li><a href="/parent/new_parent_guardian">New Guardian</a></li>
             <li><a href="/parent/edit_parent_guardian">Edit Guardian</a></li>
             <li><a href="/parent/void_parent_guardian">Void Guardian</a></li>
+            <li><a href="/parent/filter_guardians">Filter Guardians By</a></li>
           </ul>
 
         </div> <!-- end side-menu -->
@@ -110,122 +171,12 @@
 
             <div class="content-module-main">
 
-              <table>
-
-                <thead>
-
-                  <tr>
-                    <th><input type="checkbox" id="table-select-all"></th>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Actions</th>
-                  </tr>
-
-                </thead>
-
-                <tfoot>
-
-                  <tr>
-
-                    <td colspan="5" class="table-footer">
-
-                      <label for="table-select-actions">With selected:</label>
-
-                      <select id="table-select-actions">
-                        <option value="option1">Delete</option>
-                        <option value="option2">Export</option>
-                        <option value="option3">Archive</option>
-                      </select>
-
-                      <a href="#" class="round button blue text-upper small-button">Apply to selected</a>
-
-                    </td>
-
-                  </tr>
-
-                </tfoot>
-
-                <tbody>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><input type="checkbox"></td>
-                    <td>Adrian Purdila</td>
-                    <td>adipurdila</td>
-                    <td><a href="#">adipurdila@gmail.com</a></td>
-                    <td>
-                      <a href="#" class="table-actions-button ic-table-edit"></a>
-                      <a href="#" class="table-actions-button ic-table-delete"></a>
-                    </td>
-                  </tr>
-
-                </tbody>
-
-              </table>
+              <div id="container">
+              </div>
 
             </div> <!-- end content-module-main -->
 
           </div> <!-- end content-module -->
-
-
-
-
-
 
 
         </div> <!-- end side-content -->
