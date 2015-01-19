@@ -23,9 +23,10 @@
 	subjects = JSON.parse('<%= @subjects %>');
 
 	for (subject in subjects) {
+                console.log(subject)
 		id   = subject[0][0];
 		name = subject[0][1];
-		 return "<tr><td class=\"dark\"><div id=\"id\" class=\"drag clone id\">name</div><input id=\"b_id\" class=\"id\"type=\"button\" value=\"\" onclick=\"report('id')\" title=\"Show only name\"/></td></tr>\n";
+		 return "<td class=\"dark\"><div id=" + id +" class='drag clone " + id+ "'>" + name + "</div><input id='b_ " + id +"' class='" + id + "' type='button' value='' onclick=\"report('id')\" title='Show only " + name + "'/></td>";
 
 	}
 
@@ -170,7 +171,7 @@
 							<col width="190"/>
 						</colgroup>
 						<tbody>
-							 <script> subjects()  </script>
+							 <tr  id="subjects">   </tr>
 							<tr><td class="trash" title="Trash">Trash</td></tr>
 						</tbody>
 					</table>
@@ -402,6 +403,10 @@
 
   </body>
 </html>
-	<style>
+<script>
+  function __$(id){
+    return document.getElementById(id)
+  }
 
-	</style>
+  
+</script>
